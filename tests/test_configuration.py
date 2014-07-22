@@ -194,19 +194,6 @@ class TestAppConfig:
         #This is here to avoid that other tests keep using the forced controller
         config.pop('tg.root_controller')
 
-    def test_enable_routes(self):
-        if PY3: raise SkipTest()
-
-        conf = AppConfig(minimal=True)
-        conf.enable_routes = True
-        app = conf.make_wsgi_app()
-
-        a = TGApp()
-        assert a.enable_routes == True
-
-        config.pop('routes.map')
-        config.pop('enable_routes')
-
     def test_create(self):
         pass
 
