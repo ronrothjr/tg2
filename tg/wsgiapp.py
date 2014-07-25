@@ -172,8 +172,6 @@ class TGApp(object):
             testenv['tmpl_context'] = tmpl_context
             testenv['app_globals'] = self.globals
             testenv['config'] = conf
-            testenv['session'] = locals.session
-            testenv['cache'] = locals.cache
             return True, locals
 
         return False, locals
