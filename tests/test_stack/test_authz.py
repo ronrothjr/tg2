@@ -25,7 +25,7 @@ from tg import request, response, expose, require, redirect
 from tg.controllers import TGController, WSGIAppController, RestController
 from tg.controllers.util import abort
 from tg.wsgiapp import TGApp
-from tg.support.middlewares import CacheMiddleware, SessionMiddleware, StatusCodeRedirect
+from tg.support.middlewares import StatusCodeRedirect
 from tg.decorators import Decoration
 from tg.util import auth_force_login, auth_force_logout
 
@@ -88,8 +88,6 @@ def make_app(controller_klass, environ={}, with_errors=False):
         app = ErrorHandler(app, {}, debug=False)
         app = StatusCodeRedirect(app, [403, 404, 500])
     app = RegistryManager(app)
-    app = SessionMiddleware(app, {}, data_dir=session_dir)
-    app = CacheMiddleware(app, {}, data_dir=os.path.join(data_dir, 'cache'))
 
     # Setting repoze.who up:
     from repoze.who.plugins.auth_tkt import AuthTktCookiePlugin

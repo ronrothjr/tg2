@@ -10,7 +10,7 @@ from collections import MutableMapping as DictMixin, deque
 
 from tg.i18n import ugettext, get_lang
 
-from tg.support.middlewares import SessionMiddleware, CacheMiddleware
+from tg.appwrappers import CacheApplicationWrapper, SessionApplicationWrapper
 from tg.support.middlewares import StaticsMiddleware, SeekableRequestBodyMiddleware, \
     DBSessionRemoverMiddleware
 from tg.support.registry import RegistryManager
@@ -281,15 +281,15 @@ class AppConfig(Bunch):
                     return self.handler(environ, context)
         """
         if milestones.environment_loaded.reached:
-            # We must block registering wrappers if milestone passed, this is because
-            # wrappers are consumed by TGApp constructor, and all the hooks available
+            # Wrappers are consumed by TGApp constructor, and all the hooks available
             # after the milestone and that could register new wrappers are actually
             # called after TGApp constructors and so the wrappers wouldn't be applied.
-            raise TGConfigError('Cannot register application wrappers after application '
-                                'environment has already been loaded')
+            log.warning('Application Wrapper %s registered after environment loaded'
+                        'milestone has been reached, the wrapper will be used only'
+                        'for future TGApp instances.', wrapper)
 
         self.application_wrappers_dependencies.setdefault(after, []).append(wrapper)
-        milestones.environment_loaded.register(self._configure_application_wrappers)
+        self._configure_application_wrappers()
 
     def register_rendering_engine(self, factory):
         """Registers a rendering engine ``factory``.
@@ -321,13 +321,17 @@ class AppConfig(Bunch):
                 log.warn("Unable to register %s for shutdown" % cmd )
 
     def _configure_application_wrappers(self):
+        # Clear in place, this is to avoid desync between self and config
+        self.application_wrappers[:] = []
+
+        registered_wrappers = self.application_wrappers_dependencies.copy()
         visit_queue = deque([False, None])
         while visit_queue:
             current = visit_queue.popleft()
             if current not in (False, None):
                 self.application_wrappers.append(current)
 
-            dependant_wrappers = self.application_wrappers_dependencies.pop(current, [])
+            dependant_wrappers = registered_wrappers.pop(current, [])
             visit_queue.extendleft(reversed(dependant_wrappers))
 
     def _configure_package_paths(self):
@@ -465,6 +469,9 @@ class AppConfig(Bunch):
             config['tg.strict_tmpl_context'] = True
         else:
             config['tg.strict_tmpl_context'] = False
+
+        self.register_wrapper(SessionApplicationWrapper)
+        self.register_wrapper(CacheApplicationWrapper)
 
         self.after_init_config()
         self._configure_mimetypes()
@@ -850,32 +857,6 @@ class AppConfig(Bunch):
 
         return app
 
-    def add_core_middleware(self, app):
-        """Add support for sessions, and caching.
-        This is where you would want to override if you wanted to provide your
-        own routing, session, or caching middleware.  Your app_cfg.py might look something
-        like this::
-
-            from tg.configuration import AppConfig
-            from routes.middleware import RoutesMiddleware
-            from beaker.middleware import CacheMiddleware
-            from mysessionier.middleware import SessionMiddleware
-
-            class MyAppConfig(AppConfig):
-                def add_core_middleware(self, app):
-                    app = RoutesMiddleware(app, config['routes.map'])
-                    app = SessionMiddleware(app, config)
-                    app = CacheMiddleware(app, config)
-                    return app
-            base_config = MyAppConfig()
-        """
-        if self.use_sessions:
-            app = SessionMiddleware(app, config)
-
-        app = CacheMiddleware(app, config)
-
-        return app
-
     def add_tosca_middleware(self, app):
         """Configure the ToscaWidgets middleware.
 
@@ -1094,8 +1075,6 @@ class AppConfig(Bunch):
                 app = wrap_app(app)
 
             app = tg.hooks.notify_with_value('before_config', app, context_config=config)
-
-            app = self.add_core_middleware(app)
 
             if self.auth_backend:
                 # Skipping authentication if explicitly requested.

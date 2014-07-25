@@ -1,4 +1,5 @@
 import tg
+from tg.appwrappers import SessionApplicationWrapper, CacheApplicationWrapper
 
 class FakePackage(object):
     pass
@@ -23,7 +24,9 @@ default_config = {
         'rendering_engines_without_vars': set(('json',)),
         'use_legacy_renderers':False,
         'use_sqlalchemy': False,
-        'lang': None
+        'lang': None,
+        'application_wrappers': [CacheApplicationWrapper,
+                                 SessionApplicationWrapper]
 }
 
 class FakeRoutes(object):

@@ -147,8 +147,6 @@ class TGApp(object):
             tmpl_context = AttribSafeTemplateContext()
 
         app_globals = self.globals
-        session = environ.get('beaker.session')
-        cache = environ.get('beaker.cache')
 
         locals = RequestLocals()
         locals.response = response
@@ -157,8 +155,8 @@ class TGApp(object):
         locals.config = conf
         locals.tmpl_context = tmpl_context
         locals.translator = translator
-        locals.session = session
-        locals.cache = cache
+        locals.session = None
+        locals.cache = None
 
         environ['tg.locals'] = locals
 

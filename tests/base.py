@@ -9,8 +9,6 @@ except ImportError:
     from xmlrpc.client import loads, dumps
 import warnings
 
-import beaker
-
 from tg.support.registry import Registry, RegistryManager
 
 from webtest import TestApp
@@ -23,8 +21,6 @@ from tg.wsgiapp import TemplateContext, TGApp, RequestLocals
 from tg.controllers import TGController
 
 from .test_stack.baseutils import ControllerWrap, FakeRoutes, default_config
-
-from beaker.middleware import CacheMiddleware
 
 data_dir = os.path.dirname(os.path.abspath(__file__))
 session_dir = os.path.join(data_dir, 'session')
@@ -50,8 +46,6 @@ def make_app(controller_klass=None, environ=None):
     app = FakeRoutes(app)
 
     app = RegistryManager(app)
-    app = beaker.middleware.SessionMiddleware(app, {}, data_dir=session_dir)
-    app = CacheMiddleware(app, {}, data_dir=os.path.join(data_dir, 'cache'))
     return TestApp(app)
 
 def create_request(path, environ=None):

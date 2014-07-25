@@ -80,17 +80,6 @@ class StatusCodeRedirect(object):
         start_response(status, headers, exc_info)
         return app_iter
 
-from beaker.middleware import CacheMiddleware as BeakerCacheMiddleware
-from beaker.middleware import SessionMiddleware as BeakerSessionMiddleware
-
-
-class SessionMiddleware(BeakerSessionMiddleware):
-    session = None
-
-
-class CacheMiddleware(BeakerCacheMiddleware):
-    cache = None
-
 
 class SeekableRequestBodyMiddleware(object):
     def __init__(self, app):

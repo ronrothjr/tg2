@@ -56,6 +56,7 @@ class _ConfigMilestoneTracker(object):
         while True:
             try:
                 __, action = self._actions.popitem()
+                log.debug('Firing %s', action)
                 action()
             except KeyError:
                 break

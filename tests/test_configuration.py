@@ -301,7 +301,6 @@ class TestAppConfig:
         app = conf.make_wsgi_app()
 
         assert conf.did_perform_custom_tm == True
-        assert conf.application_wrappers == []
 
     def test_sqlalchemy_commit_veto(self):
         class RootController(TGController):
@@ -798,18 +797,6 @@ class TestAppConfig:
         assert conf.application_wrappers[3] == AppWrapper4
         assert conf.application_wrappers[4] == AppWrapper5
 
-    @raises(TGConfigError)
-    def test_application_wrapper_blocked_after_milestone(self):
-        class AppWrapper1:
-            pass
-        class AppWrapper2:
-            pass
-
-        conf = AppConfig(minimal=True)
-        conf.register_wrapper(AppWrapper1)
-        milestones.environment_loaded.reach()
-        conf.register_wrapper(AppWrapper2)
-
     def test_wrap_app(self):
         class RootController(TGController):
             @expose()
@@ -1297,7 +1284,7 @@ class TestAppConfig:
                 return self.dispatcher(None, environ, start_response)
 
         conf = AppConfig(minimal=True, root_controller=RootController())
-        conf.application_wrappers.append(AppWrapper)
+        conf.register_wrapper(AppWrapper)
         conf.package = PackageWithModel()
         app = conf.make_wsgi_app()
         app = TestApp(app)
