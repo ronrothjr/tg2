@@ -55,7 +55,7 @@ class SessionApplicationWrapper(object):
                             timeout=None, secret=None, log_file=None)
 
         # Pull out any config args meant for beaker session. if there are any
-        for key, val in config.iteritems():
+        for key, val in config.items():
             if key.startswith('beaker.session.'):
                 warnings.warn('Session options should start with session. '
                               'instead of baker.session.', DeprecationWarning, 2)
