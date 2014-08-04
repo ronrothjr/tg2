@@ -1076,32 +1076,8 @@ class AppConfig(Bunch):
 
             app = tg.hooks.notify_with_value('before_config', app, context_config=config)
 
-            if self.auth_backend:
-                # Skipping authentication if explicitly requested.
-                # Used by repoze.who-testutil:
-                skip_authentication = app_conf.get('skip_authentication', False)
-                app = self.add_auth_middleware(app, skip_authentication)
-
             if self.use_transaction_manager:
                 app = self.add_tm_middleware(app)
-
-            # TODO: Middlewares before this point should be converted to App Wrappers.
-            # They provide some basic TG features like AUTH, Caching and transactions
-            # which should be app wrappers to make possible to add wrappers in the
-            # stack before or after them.
-
-            if self.use_toscawidgets:
-                app = self.add_tosca_middleware(app)
-
-            if self.use_toscawidgets2:
-                app = self.add_tosca2_middleware(app)
-
-            # from here on the response is a generator
-            # so any middleware that relies on the response to be
-            # a string needs to be applied before this point.
-
-            if self.use_sqlalchemy:
-                app = self.add_sqlalchemy_middleware(app)
 
             if self.use_ming:
                 app = self.add_ming_middleware(app)
@@ -1124,6 +1100,28 @@ class AppConfig(Bunch):
                     self.handle_status_codes.append(401)
                 app = self.add_slowreqs_middleware(global_conf, app)
                 app = self.add_error_middleware(global_conf, app)
+
+            # TODO: Middlewares before this point should be converted to App Wrappers.
+            # They provide some basic TG features like AUTH, Caching and transactions
+            # which should be app wrappers to make possible to add wrappers in the
+            # stack before or after them.
+            if self.auth_backend:
+                # Skipping authentication if explicitly requested.
+                # Used by repoze.who-testutil:
+                skip_authentication = app_conf.get('skip_authentication', False)
+                app = self.add_auth_middleware(app, skip_authentication)
+
+            if self.use_toscawidgets:
+                app = self.add_tosca_middleware(app)
+
+            if self.use_toscawidgets2:
+                app = self.add_tosca2_middleware(app)
+
+            # from here on the response is a generator
+            # so any middleware that relies on the response to be
+            # a string needs to be applied before this point.
+            if self.use_sqlalchemy:
+                app = self.add_sqlalchemy_middleware(app)
 
             # Establish the registry for this application
             app = RegistryManager(app, streaming=config.get('registry_streaming', True),
