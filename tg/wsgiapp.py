@@ -41,9 +41,9 @@ class TGApp(object):
         self.controller_instances = {}
 
         # Cache some options for use during requests
-        self.strict_tmpl_context = self.config['tg.strict_tmpl_context']
+        self.strict_tmpl_context = self.config.get('tg.strict_tmpl_context', True)
         self.pylons_compatible = self.config.get('tg.pylons_compatible', True)
-        self.enable_routes = self.config.get('enable_routes', False)
+        self.lang = self.config.get('i18n.lang')
 
         self.resp_options = config.get('tg.response_options',
                                        dict(content_type='text/html',
@@ -128,7 +128,7 @@ class TGApp(object):
 
         # Setup the basic global objects
         req = Request(environ)
-        req._fast_setattr('_language', conf['lang'])
+        req._fast_setattr('_language', self.lang)
         req._fast_setattr('_response_type', None)
 
         resp_options = self.resp_options
@@ -137,9 +137,8 @@ class TGApp(object):
             charset=resp_options['charset'],
             headers=resp_options['headers'])
 
-        # Setup the translator object
-        lang = conf['lang']
-        translator = _get_translator(lang, tg_config=conf)
+        # Setup the default translator object
+        translator = _get_translator(self.lang, tg_config=conf)
 
         if self.strict_tmpl_context:
             tmpl_context = TemplateContext()

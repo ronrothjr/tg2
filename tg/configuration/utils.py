@@ -1,3 +1,6 @@
+import inspect
+import copy
+from collections import deque
 from .milestones import config_ready
 
 
@@ -30,7 +33,9 @@ def get_partial_dict(prefix, dictionary, container_type=dict):
         {'xyz':1,'zyx':2}
     """
 
-    match = prefix + "."
+    match = prefix
+    if not match.endswith('.'):
+        match += "."
     n = len(match)
 
     new_dict = container_type(((key[n:], dictionary[key])
@@ -87,3 +92,59 @@ class GlobalConfigurable(object):
     def _load_config(self):
         from tg.configuration import config
         self.configure(**coerce_config(config, self.CONFIG_NAMESPACE,  self.CONFIG_OPTIONS))
+
+
+class ConfigurationFeature(object):
+    """Defines a configuration step for Application Configurator :class:`.AppConfig`"""
+    CONFIG_NAMESPACE = None
+    CONFIG_OPTIONS = {}
+    CONFIG_DEFAULTS = {}
+
+    def __init__(self, config):
+        if self.CONFIG_NAMESPACE is None or self.CONFIG_NAMESPACE[-1] != '.':
+            raise TGConfigError('Configuration Features must have a namespace '
+                                'in the form: "namespace."')
+
+        for name, default_value in self.CONFIG_DEFAULTS.items():
+            config[self.CONFIG_NAMESPACE + name] = copy.deepcopy(default_value)
+
+    def configure(self, config):
+        pass
+
+    def setup(self, config, app_globals):
+        pass
+
+    def add_middleware(self, config, app):
+        return app
+
+
+class ListWithPrecedence(object):
+    def __init__(self):
+        self._dependencies = {}
+        self._ordered_elements = []
+
+    def add(self, obj, after=None):
+        self._dependencies.setdefault(after, []).append(obj)
+        self._resolve_ordering()
+
+    def __repr__(self):
+        return '<ListWithPrecedence %s>' % self._ordered_elements
+
+    def __iter__(self):
+        return iter(self._ordered_elements)
+
+    def _resolve_ordering(self):
+        self._ordered_elements = []
+
+        registered_wrappers = self._dependencies.copy()
+        visit_queue = deque([False, None])
+        while visit_queue:
+            current = visit_queue.popleft()
+            if current not in (False, None):
+                self._ordered_elements.append(current)
+
+                if not inspect.isclass(current):
+                    current = current.__class__
+
+            dependant_wrappers = registered_wrappers.pop(current, [])
+            visit_queue.extendleft(reversed(dependant_wrappers))

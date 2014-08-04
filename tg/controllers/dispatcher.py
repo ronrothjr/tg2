@@ -99,7 +99,7 @@ class CoreDispatcher(object):
         py_request = context.request
         py_config = context.config
 
-        if py_config.get('i18n_enabled', True):
+        if py_config.get('i18n.enabled', True):
             setup_i18n(context)
 
         state, params = self._get_dispatchable(context, py_request.quoted_path_info)
