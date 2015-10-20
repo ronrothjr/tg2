@@ -1,4 +1,4 @@
-TurboGears
+HotWheelz
 ==============
 
 .. image:: https://travis-ci.org/TurboGears/tg2.png?branch=development
